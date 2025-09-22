@@ -1,0 +1,35 @@
+---
+name: Enhanced Research Content Capture
+on:
+  workflow_dispatch:
+
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+jobs:
+  enhanced-research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Execute Enhanced Research
+        run: |
+          cd ~ && nix-shell -p nodejs expect --run 'expect -c "
+            set timeout 300
+            spawn npx @anthropic-ai/claude-code --dangerously-skip-permissions \"Brief analysis: identify one key workflow optimization for .claude methodology\"
+            expect { -re {.*style.*} { send \"1\r\" } }
+            expect { -re {.*bypass.*} { send \"2\r\" } }
+            expect { -re {.*optimization.*|.*analysis.*} {
+              send \"\\n\"
+              exit 0
+            } timeout { exit 1 } }
+          " > enhanced-output.txt 2>&1'
+      - name: Create Research File
+        run: nix-shell -p coreutils --run 'echo "Enhanced research completed" > research-done.txt'
+      - name: Upload Enhanced Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: enhanced-research-results
+          path: |
+            enhanced-output.txt
+            research-done.txt
