@@ -1,0 +1,28 @@
+---
+name: Simple Autonomous Publisher
+on:
+  workflow_dispatch:
+
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+jobs:
+  autonomous-publisher:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Claude Autonomous Research and Publish
+        run: |
+          cd ~ && nix-shell -p nodejs expect --run 'expect -c "
+            set timeout 300
+            spawn npx @anthropic-ai/claude-code --dangerously-skip-permissions \"Clone .claude methodology from github.com/garmir/claude-methodology then use nix-shell with gh CLI to create a research repository and publish your findings about network optimization\"
+            expect { -re {.*Choose.*style.*} { send \"1\r\" } }
+            expect { -re {.*bypass permissions.*} { send \"2\r\" } }
+            expect { -re {.*repository.*|.*publish.*|.*Write.*} { exit 0 } timeout { exit 1 } }
+          "' > simple-autonomous.txt 2>&1
+      - name: Upload Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonomous-publisher-output
+          path: simple-autonomous.txt
